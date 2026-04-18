@@ -1,5 +1,5 @@
-import React, { useRef, useEffect, useState } from 'react';
-import { CAM_WIDTH, WINDOW_HEIGHT, GameState } from '../game/constants';
+import React, { useRef, useEffect } from 'react';
+import { GameState } from '../game/constants';
 import type { PoseResult } from '../game/types';
 
 interface CameraProps {
@@ -13,9 +13,11 @@ const CONNECTIONS = [
   [12, 14], [14, 16]
 ];
 
+const CAMERA_WIDTH = 320;
+const CAMERA_HEIGHT = 240;
+
 export const Camera: React.FC<CameraProps> = ({ videoRef, poseResult, gameState }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [containerSize, setContainerSize] = useState({ width: CAM_WIDTH, height: WINDOW_HEIGHT });
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -25,40 +27,24 @@ export const Camera: React.FC<CameraProps> = ({ videoRef, poseResult, gameState 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Handle responsive canvas size
-    const handleResize = () => {
-      const parent = canvas.parentElement;
-      if (!parent) return;
-
-      const width = parent.clientWidth;
-      const height = parent.clientHeight;
-
-      if (width > 0 && height > 0) {
-        setContainerSize({ width, height });
-      }
-    };
-
-    window.addEventListener('resize', handleResize);
-    handleResize(); // Initial call
-
     let id: number;
     const draw = () => {
-      canvas.width = containerSize.width;
-      canvas.height = containerSize.height;
+      canvas.width = CAMERA_WIDTH;
+      canvas.height = CAMERA_HEIGHT;
 
       ctx.save();
       ctx.scale(-1, 1);
-      ctx.drawImage(video, -containerSize.width, 0, containerSize.width, containerSize.height);
+      ctx.drawImage(video, -CAMERA_WIDTH, 0, CAMERA_WIDTH, CAMERA_HEIGHT);
       ctx.restore();
 
       // Draw pose skeleton only if landmarks available
       if (poseResult.landmarks) {
-        const w = containerSize.width;
-        const h = containerSize.height;
+        const w = CAMERA_WIDTH;
+        const h = CAMERA_HEIGHT;
 
         // Draw connections (lines)
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
-        ctx.lineWidth = 1.5; // Kalınlığı azalttık
+        ctx.lineWidth = 1.5;
         
         for (const [i, j] of CONNECTIONS) {
           const p1 = poseResult.landmarks[i];
@@ -73,7 +59,7 @@ export const Camera: React.FC<CameraProps> = ({ videoRef, poseResult, gameState 
 
         // Draw keypoints (circles)
         ctx.fillStyle = '#00ff00';
-        const radius = 4; // Daha küçük circles
+        const radius = 4;
         
         [11, 12, 13, 14, 15, 16].forEach((idx) => {
           const lm = poseResult.landmarks?.[idx];
@@ -91,17 +77,8 @@ export const Camera: React.FC<CameraProps> = ({ videoRef, poseResult, gameState 
 
     return () => {
       cancelAnimationFrame(id);
-      window.removeEventListener('resize', handleResize);
     };
-    draw();
-
-    return () => {
-      cancelAnimationFrame(id);
-      window.removeEventListener('resize', handleResize);
-    };
-  }, [videoRef, poseResult, containerSize]);
-
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  }, [videoRef, poseResult]);
 
   return (
     <div style={{
@@ -110,6 +87,7 @@ export const Camera: React.FC<CameraProps> = ({ videoRef, poseResult, gameState 
       position: 'relative',
       display: 'flex',
       flexDirection: 'column',
+      backgroundColor: '#0a0a0a',
     }}>
       <video
         ref={videoRef}
@@ -118,12 +96,12 @@ export const Camera: React.FC<CameraProps> = ({ videoRef, poseResult, gameState 
         muted
         style={{
           display: 'none',
-          width: '100%',
-          height: '100%',
         }}
       />
       <canvas
         ref={canvasRef}
+        width={CAMERA_WIDTH}
+        height={CAMERA_HEIGHT}
         style={{
           width: '100%',
           height: '100%',
@@ -136,23 +114,24 @@ export const Camera: React.FC<CameraProps> = ({ videoRef, poseResult, gameState 
       <div
         style={{
           position: 'absolute',
-          bottom: isMobile ? 10 : 30,
+          bottom: 8,
           left: 0,
           right: 0,
           textAlign: 'center',
-          color: poseResult.elbowRaised ? '#00ff00' : 'white',
-          fontSize: isMobile ? 12 : 20,
+          color: poseResult.elbowRaised ? '#00ff00' : '#aaa',
+          fontSize: 11,
           fontWeight: 'bold',
           textShadow: '1px 1px 2px black',
           zIndex: 10,
-          padding: '0 10px',
+          padding: '0 5px',
+          lineHeight: '1.2',
         }}
       >
         {gameState === GameState.GAME_OVER
-          ? (poseResult.elbowRaised ? 'RESTARTING...' : 'Raise elbows to restart')
+          ? (poseResult.elbowRaised ? 'RESTARTING...' : 'Raise elbows')
           : poseResult.elbowRaised
           ? 'ELBOWS UP! 💪'
-          : 'Raise your elbows!'}
+          : 'Ready'}
       </div>
     </div>
   );

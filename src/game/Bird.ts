@@ -8,9 +8,9 @@ export class Bird {
   frameIndex: number;
   animationTimer: number;
 
-  constructor() {
-    this.x = GAME_WIDTH / 3;
-    this.y = WINDOW_HEIGHT / 2 - 50;
+  constructor(x?: number, y?: number) {
+    this.x = x || GAME_WIDTH / 3;
+    this.y = y || WINDOW_HEIGHT / 2 - 50;
     this.velocity = 0;
     this.frameIndex = 0;
     this.animationTimer = 0;

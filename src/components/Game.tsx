@@ -58,15 +58,24 @@ export const Game: React.FC<GameProps> = ({ gameState, onGameOver, flapTrigger }
     });
   }, []);
 
+  const gameSizeRef = useRef({ width: canvasSize.width, height: canvasSize.height });
+
+  // Update game size ref when canvas size changes
+  useEffect(() => {
+    gameSizeRef.current = canvasSize;
+  }, [canvasSize]);
+
   const spawnPipe = useCallback(() => {
+    const { height } = gameSizeRef.current;
     const minY = 150;
-    const maxY = WINDOW_HEIGHT - GROUND_HEIGHT - 150;
+    const maxY = height - GROUND_HEIGHT - 150;
     const gapY = minY + Math.random() * (maxY - minY);
     pipesRef.current.push(new Pipe(gapY));
   }, []);
 
   const resetGame = useCallback(() => {
-    birdRef.current = new Bird();
+    const { width, height } = gameSizeRef.current;
+    birdRef.current = new Bird(width / 3, height / 2 - 50);
     pipesRef.current = [];
     scoreRef.current = 0;
     lastPipeTimeRef.current = Date.now();
@@ -75,6 +84,7 @@ export const Game: React.FC<GameProps> = ({ gameState, onGameOver, flapTrigger }
   }, []);
 
   const checkCollision = useCallback((): boolean => {
+    const { height } = gameSizeRef.current;
     const bird = birdRef.current;
     const birdRadius = 12;
     const birdLeft = bird.x - birdRadius;
@@ -82,7 +92,7 @@ export const Game: React.FC<GameProps> = ({ gameState, onGameOver, flapTrigger }
     const birdTop = bird.y - birdRadius;
     const birdBottom = bird.y + birdRadius;
 
-    if (birdTop < 0 || birdBottom > WINDOW_HEIGHT - GROUND_HEIGHT - 10) return true;
+    if (birdTop < 0 || birdBottom > height - GROUND_HEIGHT - 10) return true;
 
     for (const pipe of pipesRef.current) {
       const pipeLeft = pipe.x;
@@ -98,13 +108,14 @@ export const Game: React.FC<GameProps> = ({ gameState, onGameOver, flapTrigger }
   }, []);
 
   const draw = useCallback((ctx: CanvasRenderingContext2D) => {
+    const { width, height } = gameSizeRef.current;
     const images = imagesRef.current;
 
     ctx.fillStyle = '#70c5ce';
-    ctx.fillRect(0, 0, GAME_WIDTH, WINDOW_HEIGHT);
+    ctx.fillRect(0, 0, width, height);
 
     const bg = images.get('background-day');
-    if (bg) ctx.drawImage(bg, 0, 0, GAME_WIDTH, WINDOW_HEIGHT);
+    if (bg) ctx.drawImage(bg, 0, 0, width, height);
 
     const pipeImg = images.get('pipe-green');
     pipesRef.current.forEach((pipe) => {
@@ -121,7 +132,7 @@ export const Game: React.FC<GameProps> = ({ gameState, onGameOver, flapTrigger }
     const groundImg = images.get('base');
     if (groundImg) {
       const scroll = groundScrollRef.current % 24;
-      ctx.drawImage(groundImg, -scroll, WINDOW_HEIGHT - GROUND_HEIGHT, GAME_WIDTH * 2, GROUND_HEIGHT);
+      ctx.drawImage(groundImg, -scroll, height - GROUND_HEIGHT, width * 2, GROUND_HEIGHT);
     }
 
     const bird = birdRef.current;
@@ -140,23 +151,23 @@ export const Game: React.FC<GameProps> = ({ gameState, onGameOver, flapTrigger }
       ctx.fillStyle = 'white';
       ctx.font = 'bold 36px Arial';
       ctx.textAlign = 'center';
-      ctx.fillText(scoreRef.current.toString(), GAME_WIDTH / 2, 70);
+      ctx.fillText(scoreRef.current.toString(), width / 2, 70);
     }
 
     if (gameState === GameState.MENU) {
       const msg = images.get('message');
       if (msg) {
-        ctx.drawImage(msg, GAME_WIDTH / 2 - 87, WINDOW_HEIGHT / 2 - 60, 174, 120);
+        ctx.drawImage(msg, width / 2 - 87, height / 2 - 60, 174, 120);
       }
     }
 
     if (gameState === GameState.GAME_OVER) {
       const go = images.get('gameover');
-      if (go) ctx.drawImage(go, GAME_WIDTH / 2 - 96, WINDOW_HEIGHT / 3 - 30, 192, 60);
+      if (go) ctx.drawImage(go, width / 2 - 96, height / 3 - 30, 192, 60);
       ctx.fillStyle = 'white';
       ctx.font = 'bold 36px Arial';
       ctx.textAlign = 'center';
-      ctx.fillText(scoreRef.current.toString(), GAME_WIDTH / 2, WINDOW_HEIGHT / 3 + 60);
+      ctx.fillText(scoreRef.current.toString(), width / 2, height / 3 + 60);
     }
   }, [gameState]);
 
@@ -199,7 +210,7 @@ export const Game: React.FC<GameProps> = ({ gameState, onGameOver, flapTrigger }
     loadImages();
   }, [loadImages]);
 
-  // Handle responsive canvas size
+  // Handle responsive canvas size - GET PARENT SIZE
   useEffect(() => {
     const handleCanvasResize = () => {
       const canvas = canvasRef.current;
@@ -213,13 +224,30 @@ export const Game: React.FC<GameProps> = ({ gameState, onGameOver, flapTrigger }
 
       if (width > 0 && height > 0) {
         setCanvasSize({ width, height });
+        console.log(`Canvas resized to: ${width}x${height}`);
       }
     };
 
-    window.addEventListener('resize', handleCanvasResize);
-    handleCanvasResize(); // Initial call
+    // Initial call
+    handleCanvasResize();
 
-    return () => window.removeEventListener('resize', handleCanvasResize);
+    // Listen for resize
+    window.addEventListener('resize', handleCanvasResize);
+    
+    // Also observe parent element size changes
+    const resizeObserver = new ResizeObserver(() => {
+      handleCanvasResize();
+    });
+    
+    const parent = canvasRef.current?.parentElement;
+    if (parent) {
+      resizeObserver.observe(parent);
+    }
+
+    return () => {
+      window.removeEventListener('resize', handleCanvasResize);
+      resizeObserver.disconnect();
+    };
   }, []);
 
   useEffect(() => {
