@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { CAM_WIDTH, WINDOW_HEIGHT, GameState } from '../game/constants';
 import type { PoseResult } from '../game/types';
 
@@ -15,6 +15,7 @@ const CONNECTIONS = [
 
 export const Camera: React.FC<CameraProps> = ({ videoRef, poseResult, gameState }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [containerSize, setContainerSize] = useState({ width: CAM_WIDTH, height: WINDOW_HEIGHT });
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -24,19 +25,35 @@ export const Camera: React.FC<CameraProps> = ({ videoRef, poseResult, gameState 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    // Handle responsive canvas size
+    const handleResize = () => {
+      const parent = canvas.parentElement;
+      if (!parent) return;
+
+      const width = parent.clientWidth;
+      const height = parent.clientHeight;
+
+      if (width > 0 && height > 0) {
+        setContainerSize({ width, height });
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    handleResize(); // Initial call
+
     let id: number;
     const draw = () => {
-      canvas.width = CAM_WIDTH;
-      canvas.height = WINDOW_HEIGHT;
+      canvas.width = containerSize.width;
+      canvas.height = containerSize.height;
 
       ctx.save();
       ctx.scale(-1, 1);
-      ctx.drawImage(video, -CAM_WIDTH, 0, CAM_WIDTH, WINDOW_HEIGHT);
+      ctx.drawImage(video, -containerSize.width, 0, containerSize.width, containerSize.height);
       ctx.restore();
 
       if (poseResult.landmarks) {
-        const w = CAM_WIDTH;
-        const h = WINDOW_HEIGHT;
+        const w = containerSize.width;
+        const h = containerSize.height;
 
         ctx.strokeStyle = 'white';
         ctx.lineWidth = 2;
@@ -66,59 +83,96 @@ export const Camera: React.FC<CameraProps> = ({ videoRef, poseResult, gameState 
       id = requestAnimationFrame(draw);
     };
     draw();
-    return () => cancelAnimationFrame(id);
-  }, [videoRef, poseResult]);
+
+    return () => {
+      cancelAnimationFrame(id);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [videoRef, poseResult, containerSize]);
+
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
   return (
-    <div style={{ width: CAM_WIDTH, height: WINDOW_HEIGHT, position: 'relative' }}>
+    <div style={{
+      width: '100%',
+      height: '100%',
+      position: 'relative',
+      display: 'flex',
+      flexDirection: 'column',
+    }}>
       <video ref={videoRef} style={{ display: 'none' }} playsInline muted />
-      <canvas ref={canvasRef} style={{ width: '100%', height: '100%' }} />
+      <canvas
+        ref={canvasRef}
+        style={{
+          width: '100%',
+          height: '100%',
+          display: 'block',
+          flex: 1,
+        }}
+      />
 
-      <div style={{
-        position: 'absolute',
-        top: 30,
-        left: 50,
-        width: 60,
-        height: 80,
-        borderRadius: 10,
-        border: '3px solid white',
-        backgroundColor: poseResult.leftRaised ? 'rgba(0,255,0,0.5)' : 'rgba(80,80,80,0.5)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: 'white',
-        fontSize: 24,
-        fontWeight: 'bold',
-      }}>L</div>
+      {/* Left arm indicator */}
+      <div
+        style={{
+          position: 'absolute',
+          top: isMobile ? 10 : 30,
+          left: isMobile ? 10 : 50,
+          width: isMobile ? 45 : 60,
+          height: isMobile ? 60 : 80,
+          borderRadius: 10,
+          border: '2px solid white',
+          backgroundColor: poseResult.leftRaised ? 'rgba(0,255,0,0.5)' : 'rgba(80,80,80,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: 'white',
+          fontSize: isMobile ? 16 : 24,
+          fontWeight: 'bold',
+          zIndex: 10,
+        }}
+      >
+        L
+      </div>
 
-      <div style={{
-        position: 'absolute',
-        top: 30,
-        right: 50,
-        width: 60,
-        height: 80,
-        borderRadius: 10,
-        border: '3px solid white',
-        backgroundColor: poseResult.rightRaised ? 'rgba(0,255,0,0.5)' : 'rgba(80,80,80,0.5)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: 'white',
-        fontSize: 24,
-        fontWeight: 'bold',
-      }}>R</div>
+      {/* Right arm indicator */}
+      <div
+        style={{
+          position: 'absolute',
+          top: isMobile ? 10 : 30,
+          right: isMobile ? 10 : 50,
+          width: isMobile ? 45 : 60,
+          height: isMobile ? 60 : 80,
+          borderRadius: 10,
+          border: '2px solid white',
+          backgroundColor: poseResult.rightRaised ? 'rgba(0,255,0,0.5)' : 'rgba(80,80,80,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: 'white',
+          fontSize: isMobile ? 16 : 24,
+          fontWeight: 'bold',
+          zIndex: 10,
+        }}
+      >
+        R
+      </div>
 
-      <div style={{
-        position: 'absolute',
-        bottom: 30,
-        left: 0,
-        right: 0,
-        textAlign: 'center',
-        color: poseResult.leftRaised || poseResult.rightRaised ? '#00ff00' : 'white',
-        fontSize: 20,
-        fontWeight: 'bold',
-        textShadow: '1px 1px 2px black',
-      }}>
+      {/* Status text */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: isMobile ? 10 : 30,
+          left: 0,
+          right: 0,
+          textAlign: 'center',
+          color: poseResult.leftRaised || poseResult.rightRaised ? '#00ff00' : 'white',
+          fontSize: isMobile ? 12 : 20,
+          fontWeight: 'bold',
+          textShadow: '1px 1px 2px black',
+          zIndex: 10,
+          padding: '0 10px',
+        }}
+      >
         {gameState === GameState.GAME_OVER
           ? (poseResult.leftRaised || poseResult.rightRaised ? 'RESTARTING...' : 'ONE arm to restart')
           : poseResult.leftRaised && poseResult.rightRaised

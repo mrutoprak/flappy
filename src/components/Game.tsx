@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useCallback } from 'react';
+import React, { useRef, useEffect, useCallback, useState } from 'react';
 import {
   WINDOW_HEIGHT,
   GAME_WIDTH,
@@ -28,6 +28,7 @@ export const Game: React.FC<GameProps> = ({ gameState, onGameOver, flapTrigger }
   const frameCountRef = useRef(0);
   const imagesRef = useRef<Map<string, HTMLImageElement>>(new Map());
   const loadedRef = useRef(false);
+  const [canvasSize, setCanvasSize] = useState({ width: GAME_WIDTH, height: WINDOW_HEIGHT });
 
   const loadImages = useCallback(() => {
     const paths = [
@@ -198,6 +199,29 @@ export const Game: React.FC<GameProps> = ({ gameState, onGameOver, flapTrigger }
     loadImages();
   }, [loadImages]);
 
+  // Handle responsive canvas size
+  useEffect(() => {
+    const handleCanvasResize = () => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+
+      const parent = canvas.parentElement;
+      if (!parent) return;
+
+      const width = parent.clientWidth;
+      const height = parent.clientHeight;
+
+      if (width > 0 && height > 0) {
+        setCanvasSize({ width, height });
+      }
+    };
+
+    window.addEventListener('resize', handleCanvasResize);
+    handleCanvasResize(); // Initial call
+
+    return () => window.removeEventListener('resize', handleCanvasResize);
+  }, []);
+
   useEffect(() => {
     let frameId: number;
     const loop = () => {
@@ -216,8 +240,13 @@ export const Game: React.FC<GameProps> = ({ gameState, onGameOver, flapTrigger }
   return (
     <canvas
       ref={canvasRef}
-      width={GAME_WIDTH}
-      height={WINDOW_HEIGHT}
+      width={canvasSize.width}
+      height={canvasSize.height}
+      style={{
+        display: 'block',
+        width: '100%',
+        height: '100%',
+      }}
     />
   );
 };

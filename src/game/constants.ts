@@ -1,7 +1,45 @@
-export const WINDOW_WIDTH = 1400;
-export const WINDOW_HEIGHT = 700;
-export const GAME_WIDTH = 400;
-export const CAM_WIDTH = 1000;
+// Desktop sizes
+export const DESKTOP_WINDOW_WIDTH = 1400;
+export const DESKTOP_WINDOW_HEIGHT = 700;
+export const DESKTOP_GAME_WIDTH = 400;
+export const DESKTOP_CAM_WIDTH = 1000;
+
+// Mobile sizes
+export const MOBILE_GAME_WIDTH = 100; // %
+export const MOBILE_GAME_HEIGHT = 60; // %
+export const MOBILE_CAM_WIDTH = 100; // %
+export const MOBILE_CAM_HEIGHT = 40; // %
+
+// Responsive - determined at runtime
+export let WINDOW_WIDTH = DESKTOP_WINDOW_WIDTH;
+export let WINDOW_HEIGHT = DESKTOP_WINDOW_HEIGHT;
+export let GAME_WIDTH = DESKTOP_GAME_WIDTH;
+export let GAME_HEIGHT = DESKTOP_WINDOW_HEIGHT;
+export let CAM_WIDTH = DESKTOP_CAM_WIDTH;
+export let CAM_HEIGHT = DESKTOP_WINDOW_HEIGHT;
+export let IS_MOBILE = false;
+
+// Function to update sizes based on window
+export function updateResponsiveSizes() {
+  const width = typeof window !== 'undefined' ? window.innerWidth : 1400;
+  const height = typeof window !== 'undefined' ? window.innerHeight : 700;
+  
+  IS_MOBILE = width < 768;
+  
+  if (IS_MOBILE) {
+    WINDOW_WIDTH = width;
+    WINDOW_HEIGHT = height;
+    GAME_WIDTH = width;
+    GAME_HEIGHT = Math.floor(height * 0.6);
+    CAM_WIDTH = width;
+    CAM_HEIGHT = Math.floor(height * 0.4);
+  } else {
+    WINDOW_WIDTH = DESKTOP_WINDOW_WIDTH;
+    WINDOW_HEIGHT = DESKTOP_WINDOW_HEIGHT;
+    GAME_WIDTH = DESKTOP_GAME_WIDTH;
+    CAM_WIDTH = DESKTOP_CAM_WIDTH;
+  }
+}
 
 export const GRAVITY = 0.1;
 export const FLAP_STRENGTH = -3;
