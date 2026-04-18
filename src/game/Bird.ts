@@ -1,4 +1,4 @@
-import { GRAVITY, FLAP_STRENGTH, GAME_WIDTH, WINDOW_HEIGHT } from './constants';
+import { GRAVITY, FLAP_STRENGTH } from './constants';
 import type { BirdState } from './types';
 
 export class Bird {
@@ -9,8 +9,9 @@ export class Bird {
   animationTimer: number;
 
   constructor(x?: number, y?: number) {
-    this.x = x || GAME_WIDTH / 3;
-    this.y = y || WINDOW_HEIGHT / 2 - 50;
+    // Her zaman parametre verilmeli, default olarak 100, 100 kullan
+    this.x = x || 100;
+    this.y = y || 100;
     this.velocity = 0;
     this.frameIndex = 0;
     this.animationTimer = 0;

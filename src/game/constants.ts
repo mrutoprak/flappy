@@ -46,7 +46,7 @@ export const FLAP_STRENGTH = -3;
 export const PIPE_GAP = 220;
 export const PIPE_WIDTH = 52;
 export const PIPE_SPEED = 2;
-export const PIPE_SPAWN_INTERVAL = 4000;
+export const PIPE_SPAWN_INTERVAL = 6000; // Arttırıldı: 4000 → 6000 (bloklar arasında daha fazla boşluk)
 export const GROUND_HEIGHT = 112;
 export const RAISE_THRESHOLD = -0.12;
 

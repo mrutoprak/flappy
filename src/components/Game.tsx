@@ -67,8 +67,11 @@ export const Game: React.FC<GameProps> = ({ gameState, onGameOver, flapTrigger }
 
   const spawnPipe = useCallback(() => {
     const { height } = gameSizeRef.current;
-    const minY = 150;
+    const minY = Math.max(150, PIPE_GAP + 100); // Minimum alan
     const maxY = height - GROUND_HEIGHT - 150;
+    
+    if (maxY <= minY) return; // Spawn etmek için yeterli yer yok
+    
     const gapY = minY + Math.random() * (maxY - minY);
     pipesRef.current.push(new Pipe(gapY));
   }, []);
@@ -222,31 +225,18 @@ export const Game: React.FC<GameProps> = ({ gameState, onGameOver, flapTrigger }
       const width = parent.clientWidth;
       const height = parent.clientHeight;
 
-      if (width > 0 && height > 0) {
+      if (width > 0 && height > 0 && (canvasSize.width !== width || canvasSize.height !== height)) {
         setCanvasSize({ width, height });
-        console.log(`Canvas resized to: ${width}x${height}`);
       }
     };
 
-    // Initial call
-    handleCanvasResize();
-
-    // Listen for resize
+    // Initial call - measure parent size
+    const timer = setTimeout(handleCanvasResize, 100);
     window.addEventListener('resize', handleCanvasResize);
-    
-    // Also observe parent element size changes
-    const resizeObserver = new ResizeObserver(() => {
-      handleCanvasResize();
-    });
-    
-    const parent = canvasRef.current?.parentElement;
-    if (parent) {
-      resizeObserver.observe(parent);
-    }
 
     return () => {
+      clearTimeout(timer);
       window.removeEventListener('resize', handleCanvasResize);
-      resizeObserver.disconnect();
     };
   }, []);
 
