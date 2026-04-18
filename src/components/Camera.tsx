@@ -1,11 +1,9 @@
 import React, { useRef, useEffect } from 'react';
-import { GameState } from '../game/constants';
 import type { PoseResult } from '../game/types';
 
 interface CameraProps {
   videoRef: React.RefObject<HTMLVideoElement | null>;
   poseResult: PoseResult;
-  gameState: GameState;
 }
 
 const CONNECTIONS = [
@@ -13,10 +11,10 @@ const CONNECTIONS = [
   [12, 14], [14, 16]
 ];
 
-const CAMERA_WIDTH = 160;
-const CAMERA_HEIGHT = 120;
+const CAMERA_WIDTH = 640;
+const CAMERA_HEIGHT = 480;
 
-export const Camera: React.FC<CameraProps> = ({ videoRef, poseResult, gameState }) => {
+export const Camera: React.FC<CameraProps> = ({ videoRef, poseResult }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -109,30 +107,6 @@ export const Camera: React.FC<CameraProps> = ({ videoRef, poseResult, gameState 
           flex: 1,
         }}
       />
-
-      {/* Status text */}
-      <div
-        style={{
-          position: 'absolute',
-          bottom: 8,
-          left: 0,
-          right: 0,
-          textAlign: 'center',
-          color: poseResult.elbowRaised ? '#00ff00' : '#aaa',
-          fontSize: 11,
-          fontWeight: 'bold',
-          textShadow: '1px 1px 2px black',
-          zIndex: 10,
-          padding: '0 5px',
-          lineHeight: '1.2',
-        }}
-      >
-        {gameState === GameState.GAME_OVER
-          ? (poseResult.elbowRaised ? 'RESTARTING...' : 'Raise elbows')
-          : poseResult.elbowRaised
-          ? 'ELBOWS UP! 💪'
-          : 'Ready'}
-      </div>
     </div>
   );
 };
