@@ -100,7 +100,17 @@ export const Camera: React.FC<CameraProps> = ({ videoRef, poseResult, gameState 
       display: 'flex',
       flexDirection: 'column',
     }}>
-      <video ref={videoRef} style={{ display: 'none' }} playsInline muted />
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        muted
+        style={{
+          display: 'none',
+          width: '100%',
+          height: '100%',
+        }}
+      />
       <canvas
         ref={canvasRef}
         style={{

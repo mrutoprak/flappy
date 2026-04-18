@@ -50,17 +50,38 @@ export function usePoseDetection() {
 
   const startWebcam = useCallback(async () => {
     try {
+      console.log('Starting webcam...');
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { width: 640, height: 480 },
       });
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        await videoRef.current.play();
+        
+        // Wait for video to load metadata before playing
+        videoRef.current.onloadedmetadata = () => {
+          console.log('✅ Video metadata loaded, video ready');
+          videoRef.current?.play().catch(err => {
+            console.error('Play error:', err);
+            setError('Failed to play video stream');
+          });
+        };
+
+        // Timeout fallback in case metadata doesn't load
+        setTimeout(() => {
+          if (videoRef.current && videoRef.current.readyState === 0) {
+            console.warn('⚠️ Video metadata not loaded after 3s, attempting play anyway...');
+            videoRef.current.play().catch(err => {
+              console.error('Play error:', err);
+              setError('Failed to play video stream');
+            });
+          }
+        }, 3000);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to access webcam');
-      console.error('Webcam error:', err);
+      const errorMsg = err instanceof Error ? err.message : 'Failed to access webcam';
+      setError(errorMsg);
+      console.error('❌ Webcam error:', errorMsg);
     }
   }, []);
 
@@ -73,44 +94,48 @@ export function usePoseDetection() {
       return;
     }
 
-    const results = landmarkerRef.current.detectForVideo(video, performance.now());
+    try {
+      const results = landmarkerRef.current.detectForVideo(video, performance.now());
 
-    if (results.landmarks && results.landmarks.length > 0) {
-      const landmarks = results.landmarks[0];
-      const leftShoulder = landmarks[11];
-      const rightShoulder = landmarks[12];
-      const leftWrist = landmarks[15];
-      const rightWrist = landmarks[16];
+      if (results.landmarks && results.landmarks.length > 0) {
+        const landmarks = results.landmarks[0];
+        const leftShoulder = landmarks[11];
+        const rightShoulder = landmarks[12];
+        const leftWrist = landmarks[15];
+        const rightWrist = landmarks[16];
 
-      // y: 0 = yukarı, 1 = aşağı. Bilek omuzdan yukarıda = daha küçük y
-      const leftRaised = leftWrist.y < leftShoulder.y + 0.08;
-      const rightRaised = rightWrist.y < rightShoulder.y + 0.08;
+        // y: 0 = yukarı, 1 = aşağı. Bilek omuzdan yukarıda = daha küçük y
+        const leftRaised = leftWrist.y < leftShoulder.y + 0.08;
+        const rightRaised = rightWrist.y < rightShoulder.y + 0.08;
 
-      console.log(`L:${leftRaised?'↑':'.'} diff:${(leftWrist.y-leftShoulder.y).toFixed(3)} R:${rightRaised?'↑':'.'} diff:${(rightWrist.y-rightShoulder.y).toFixed(3)}`);
+        console.log(`L:${leftRaised?'↑':'.'} diff:${(leftWrist.y-leftShoulder.y).toFixed(3)} R:${rightRaised?'↑':'.'} diff:${(rightWrist.y-rightShoulder.y).toFixed(3)}`);
 
-      const raiseNow = leftRaised || rightRaised;
-      const shouldFlap = raiseNow && !wasRaisedRef.current;
-      
-      const singleRaised = (leftRaised && !rightRaised) || (rightRaised && !leftRaised);
-      const restartTrigger = singleRaised && !wasSingleRaisedRef.current ? 1 : 0;
-      wasSingleRaisedRef.current = singleRaised;
-      
-      wasRaisedRef.current = raiseNow;
+        const raiseNow = leftRaised || rightRaised;
+        const shouldFlap = raiseNow && !wasRaisedRef.current;
+        
+        const singleRaised = (leftRaised && !rightRaised) || (rightRaised && !leftRaised);
+        const restartTrigger = singleRaised && !wasSingleRaisedRef.current ? 1 : 0;
+        wasSingleRaisedRef.current = singleRaised;
+        
+        wasRaisedRef.current = raiseNow;
 
-      setPoseResult({
-        leftRaised,
-        rightRaised,
-        shouldFlap,
-        restartTrigger,
-        landmarks,
-      });
-    } else {
-      setPoseResult({
-        leftRaised: false,
-        rightRaised: false,
-        shouldFlap: false,
-        restartTrigger: 0,
-      });
+        setPoseResult({
+          leftRaised,
+          rightRaised,
+          shouldFlap,
+          restartTrigger,
+          landmarks,
+        });
+      } else {
+        setPoseResult({
+          leftRaised: false,
+          rightRaised: false,
+          shouldFlap: false,
+          restartTrigger: 0,
+        });
+      }
+    } catch (err) {
+      console.error('Pose detection error:', err);
     }
 
     animationRef.current = requestAnimationFrame(detectPose);
