@@ -34,8 +34,8 @@ export function usePoseDetection() {
         },
         runningMode: 'VIDEO',
         numPoses: 1,
-        minPoseDetectionConfidence: 0.25,
-        minTrackingConfidence: 0.25,
+        minPoseDetectionConfidence: 0.15, // Düşürüldü (0.25 → 0.15)
+        minTrackingConfidence: 0.15, // Düşürüldü (0.25 → 0.15)
         outputSegmentationMasks: false,
       });
 
@@ -52,7 +52,7 @@ export function usePoseDetection() {
     try {
       console.log('Starting webcam...');
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 640, height: 480 },
+        video: { width: 320, height: 240 }, // Düşük çözünürlük = daha hızlı
       });
 
       if (videoRef.current) {

@@ -51,18 +51,19 @@ export const Camera: React.FC<CameraProps> = ({ videoRef, poseResult, gameState 
       ctx.drawImage(video, -containerSize.width, 0, containerSize.width, containerSize.height);
       ctx.restore();
 
+      // Draw pose skeleton only if landmarks available
       if (poseResult.landmarks) {
         const w = containerSize.width;
         const h = containerSize.height;
 
-        ctx.strokeStyle = 'white';
-        ctx.lineWidth = 2;
-        ctx.fillStyle = '#00ff00';
-
+        // Draw connections (lines)
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.lineWidth = 1.5; // Kalınlığı azalttık
+        
         for (const [i, j] of CONNECTIONS) {
           const p1 = poseResult.landmarks[i];
           const p2 = poseResult.landmarks[j];
-          if (p1 && p2) {
+          if (p1 && p2 && p1.visibility! > 0.3 && p2.visibility! > 0.3) {
             ctx.beginPath();
             ctx.moveTo(w - p1.x * w, p1.y * h);
             ctx.lineTo(w - p2.x * w, p2.y * h);
@@ -70,17 +71,27 @@ export const Camera: React.FC<CameraProps> = ({ videoRef, poseResult, gameState 
           }
         }
 
+        // Draw keypoints (circles)
+        ctx.fillStyle = '#00ff00';
+        const radius = 4; // Daha küçük circles
+        
         [11, 12, 13, 14, 15, 16].forEach((idx) => {
           const lm = poseResult.landmarks?.[idx];
-          if (lm) {
+          if (lm && lm.visibility! > 0.3) {
             ctx.beginPath();
-            ctx.arc(w - lm.x * w, lm.y * h, 6, 0, Math.PI * 2);
+            ctx.arc(w - lm.x * w, lm.y * h, radius, 0, Math.PI * 2);
             ctx.fill();
           }
         });
       }
 
       id = requestAnimationFrame(draw);
+    };
+    draw();
+
+    return () => {
+      cancelAnimationFrame(id);
+      window.removeEventListener('resize', handleResize);
     };
     draw();
 
