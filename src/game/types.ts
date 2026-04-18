@@ -24,8 +24,7 @@ export interface GameStore {
 }
 
 export interface PoseResult {
-  leftRaised: boolean;
-  rightRaised: boolean;
+  elbowRaised: boolean; // Elbow-based detection
   shouldFlap: boolean;
   restartTrigger: number;
   landmarks?: readonly {

@@ -12,14 +12,13 @@ export function usePoseDetection() {
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [poseResult, setPoseResult] = useState<PoseResult>({
-    leftRaised: false,
-    rightRaised: false,
+    elbowRaised: false,
     shouldFlap: false,
     restartTrigger: 0,
   });
 
   const wasRaisedRef = useRef(false);
-  const wasSingleRaisedRef = useRef(false);
+  const wasSingleElbowRef = useRef(false);
 
   const initPoseDetector = useCallback(async () => {
     try {
@@ -101,35 +100,37 @@ export function usePoseDetection() {
         const landmarks = results.landmarks[0];
         const leftShoulder = landmarks[11];
         const rightShoulder = landmarks[12];
-        const leftWrist = landmarks[15];
-        const rightWrist = landmarks[16];
+        const leftElbow = landmarks[13];
+        const rightElbow = landmarks[14];
 
-        // y: 0 = yukarı, 1 = aşağı. Bilek omuzdan yukarıda = daha küçük y
-        const leftRaised = leftWrist.y < leftShoulder.y + 0.08;
-        const rightRaised = rightWrist.y < rightShoulder.y + 0.08;
+        // Check if elbows are raised above shoulders
+        // y: 0 = top, 1 = bottom. Elbow above shoulder = smaller y value
+        // Threshold: elbow.y < shoulder.y - 0.05 means elbow is about 5% above shoulder
+        const leftElbowRaised = leftElbow.y < leftShoulder.y - 0.05;
+        const rightElbowRaised = rightElbow.y < rightShoulder.y - 0.05;
 
-        console.log(`L:${leftRaised?'↑':'.'} diff:${(leftWrist.y-leftShoulder.y).toFixed(3)} R:${rightRaised?'↑':'.'} diff:${(rightWrist.y-rightShoulder.y).toFixed(3)}`);
+        console.log(`L elbow:${leftElbowRaised?'↑':'.'} diff:${(leftElbow.y-leftShoulder.y).toFixed(3)} R elbow:${rightElbowRaised?'↑':'.'} diff:${(rightElbow.y-rightShoulder.y).toFixed(3)}`);
 
-        const raiseNow = leftRaised || rightRaised;
-        const shouldFlap = raiseNow && !wasRaisedRef.current;
+        // Both elbows raised = flap
+        const bothRaised = leftElbowRaised && rightElbowRaised;
+        const shouldFlap = bothRaised && !wasRaisedRef.current;
         
-        const singleRaised = (leftRaised && !rightRaised) || (rightRaised && !leftRaised);
-        const restartTrigger = singleRaised && !wasSingleRaisedRef.current ? 1 : 0;
-        wasSingleRaisedRef.current = singleRaised;
+        // Single elbow raised = restart
+        const singleElbowRaised = (leftElbowRaised && !rightElbowRaised) || (rightElbowRaised && !leftElbowRaised);
+        const restartTrigger = singleElbowRaised && !wasSingleElbowRef.current ? 1 : 0;
+        wasSingleElbowRef.current = singleElbowRaised;
         
-        wasRaisedRef.current = raiseNow;
+        wasRaisedRef.current = bothRaised;
 
         setPoseResult({
-          leftRaised,
-          rightRaised,
+          elbowRaised: bothRaised,
           shouldFlap,
           restartTrigger,
           landmarks,
         });
       } else {
         setPoseResult({
-          leftRaised: false,
-          rightRaised: false,
+          elbowRaised: false,
           shouldFlap: false,
           restartTrigger: 0,
         });

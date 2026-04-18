@@ -132,52 +132,6 @@ export const Camera: React.FC<CameraProps> = ({ videoRef, poseResult, gameState 
         }}
       />
 
-      {/* Left arm indicator */}
-      <div
-        style={{
-          position: 'absolute',
-          top: isMobile ? 10 : 30,
-          left: isMobile ? 10 : 50,
-          width: isMobile ? 45 : 60,
-          height: isMobile ? 60 : 80,
-          borderRadius: 10,
-          border: '2px solid white',
-          backgroundColor: poseResult.leftRaised ? 'rgba(0,255,0,0.5)' : 'rgba(80,80,80,0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: 'white',
-          fontSize: isMobile ? 16 : 24,
-          fontWeight: 'bold',
-          zIndex: 10,
-        }}
-      >
-        L
-      </div>
-
-      {/* Right arm indicator */}
-      <div
-        style={{
-          position: 'absolute',
-          top: isMobile ? 10 : 30,
-          right: isMobile ? 10 : 50,
-          width: isMobile ? 45 : 60,
-          height: isMobile ? 60 : 80,
-          borderRadius: 10,
-          border: '2px solid white',
-          backgroundColor: poseResult.rightRaised ? 'rgba(0,255,0,0.5)' : 'rgba(80,80,80,0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: 'white',
-          fontSize: isMobile ? 16 : 24,
-          fontWeight: 'bold',
-          zIndex: 10,
-        }}
-      >
-        R
-      </div>
-
       {/* Status text */}
       <div
         style={{
@@ -186,7 +140,7 @@ export const Camera: React.FC<CameraProps> = ({ videoRef, poseResult, gameState 
           left: 0,
           right: 0,
           textAlign: 'center',
-          color: poseResult.leftRaised || poseResult.rightRaised ? '#00ff00' : 'white',
+          color: poseResult.elbowRaised ? '#00ff00' : 'white',
           fontSize: isMobile ? 12 : 20,
           fontWeight: 'bold',
           textShadow: '1px 1px 2px black',
@@ -195,14 +149,10 @@ export const Camera: React.FC<CameraProps> = ({ videoRef, poseResult, gameState 
         }}
       >
         {gameState === GameState.GAME_OVER
-          ? (poseResult.leftRaised || poseResult.rightRaised ? 'RESTARTING...' : 'ONE arm to restart')
-          : poseResult.leftRaised && poseResult.rightRaised
-          ? 'BOTH ARMS UP!'
-          : poseResult.leftRaised
-          ? 'LEFT ARM UP!'
-          : poseResult.rightRaised
-          ? 'RIGHT ARM UP!'
-          : 'Raise your arms!'}
+          ? (poseResult.elbowRaised ? 'RESTARTING...' : 'Raise elbows to restart')
+          : poseResult.elbowRaised
+          ? 'ELBOWS UP! 💪'
+          : 'Raise your elbows!'}
       </div>
     </div>
   );
