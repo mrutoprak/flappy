@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import type { PoseResult, PlankMetrics } from '../game/types';
+import type { ScreenOrientation } from '../hooks/useScreenOrientation';
 import { ExerciseMode, PLANK_WARNING_INTERVAL } from '../game/constants';
 import { usePlankDetection } from '../hooks/usePlankDetection';
 
@@ -7,6 +8,7 @@ interface CameraProps {
   videoRef: React.RefObject<HTMLVideoElement | null>;
   poseResult: PoseResult;
   exerciseMode: ExerciseMode;
+  screenOrientation: ScreenOrientation;
   onModeChange: () => void;
 }
 
@@ -41,6 +43,7 @@ export const Camera: React.FC<CameraProps> = ({
   videoRef,
   poseResult,
   exerciseMode,
+  screenOrientation,
   onModeChange,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -104,9 +107,10 @@ export const Camera: React.FC<CameraProps> = ({
             }
           });
         } else if (exerciseMode === ExerciseMode.PLANK) {
-          // Plank mode: Draw shoulder-hip-ankle line
-          const metrics = calculateAngle(poseResult.landmarks);
-          setPlankMetrics(metrics);
+          // Plank mode: Only calculate and draw if landscape
+          if (screenOrientation.isLandscape) {
+            const metrics = calculateAngle(poseResult.landmarks);
+            setPlankMetrics(metrics);
 
           const rightShoulder = poseResult.landmarks[11];
           const leftShoulder = poseResult.landmarks[12];
@@ -175,6 +179,15 @@ export const Camera: React.FC<CameraProps> = ({
               createBeep();
             }
           }
+          } else {
+            // Portrait mode - reset metrics
+            setPlankMetrics({
+              isStraight: true,
+              angle: 0,
+              confidence: 0,
+              lastWarningTime: 0,
+            });
+          }
         }
       }
 
@@ -185,7 +198,7 @@ export const Camera: React.FC<CameraProps> = ({
     return () => {
       cancelAnimationFrame(id);
     };
-  }, [videoRef, poseResult, exerciseMode, calculateAngle]);
+  }, [videoRef, poseResult, exerciseMode, screenOrientation, calculateAngle]);
 
   return (
     <div
@@ -238,7 +251,7 @@ export const Camera: React.FC<CameraProps> = ({
       </div>
 
       {/* Plank Metrics Display */}
-      {exerciseMode === ExerciseMode.PLANK && (
+      {exerciseMode === ExerciseMode.PLANK && screenOrientation.isLandscape && (
         <div
           style={{
             position: 'absolute',
@@ -278,6 +291,64 @@ export const Camera: React.FC<CameraProps> = ({
           }}
         >
           {poseResult.elbowRaised ? '💪 ELBOWS UP - PUSH!' : 'Lower elbows for push-up'}
+        </div>
+      )}
+
+      {/* Landscape Warning Overlay - Plank Mode */}
+      {exerciseMode === ExerciseMode.PLANK && !screenOrientation.isLandscape && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 100,
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '20px',
+              padding: '40px',
+              textAlign: 'center',
+            }}
+          >
+            <div style={{ fontSize: '80px', animation: 'spin 2s linear infinite' }}>
+              📱
+            </div>
+            <h2 style={{ color: '#ff6600', margin: '0 0 10px 0', fontSize: '24px' }}>
+              📱 Telefonu Yatay Tut
+            </h2>
+            <p style={{ color: '#aaa', margin: 0, fontSize: '14px', maxWidth: '300px' }}>
+              Plank pozisyonu doğru ölçüm için telefonun yatay tutulması gerekiyor.
+            </p>
+            <div
+              style={{
+                marginTop: '20px',
+                width: '40px',
+                height: '40px',
+                border: '4px solid #ff6600',
+                borderRadius: '50%',
+                borderTop: '4px solid transparent',
+                animation: 'spin 1s linear infinite',
+              }}
+            />
+          </div>
+
+          <style>{`
+            @keyframes spin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+          `}</style>
         </div>
       )}
 

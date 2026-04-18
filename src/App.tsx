@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { usePoseDetection } from './hooks/usePoseDetection';
+import { useScreenOrientation } from './hooks/useScreenOrientation';
 import { Camera } from './components/Camera';
 import { ExerciseMode } from './game/constants';
 
 function App() {
   const [exerciseMode, setExerciseMode] = useState<ExerciseMode | null>(null);
   const { videoRef, error, poseResult } = usePoseDetection();
+  const screenOrientation = useScreenOrientation();
 
   if (error) {
     return (
@@ -132,6 +134,7 @@ function App() {
           videoRef={videoRef}
           poseResult={poseResult}
           exerciseMode={exerciseMode}
+          screenOrientation={screenOrientation}
           onModeChange={() => setExerciseMode(null)}
         />
       </div>
