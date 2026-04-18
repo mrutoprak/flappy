@@ -2,16 +2,18 @@ import { useState, useEffect, useCallback } from 'react';
 import { Game } from './components/Game';
 import { Camera } from './components/Camera';
 import { usePoseDetection } from './hooks/usePoseDetection';
-import { GameState, updateResponsiveSizes } from './game/constants';
+import { GameState, updateResponsiveSizes, SpeedLevel } from './game/constants';
 
 function App() {
   const [gameState, setGameState] = useState<GameState>(GameState.MENU);
+  const [speedLevel, setSpeedLevel] = useState<SpeedLevel>(SpeedLevel.NORMAL);
   const [flapTrigger, setFlapTrigger] = useState(0);
   const { videoRef, error, poseResult } = usePoseDetection();
 
-  const startGame = useCallback(() => {
+  const startGame = useCallback((level: SpeedLevel = speedLevel) => {
+    setSpeedLevel(level);
     setGameState(GameState.PLAYING);
-  }, []);
+  }, [speedLevel]);
 
   const flap = useCallback(() => {
     setFlapTrigger(prev => prev + 1);
@@ -81,6 +83,10 @@ function App() {
     );
   }
 
+  const handleSpeedSelection = useCallback((level: SpeedLevel) => {
+    startGame(level);
+  }, [startGame]);
+
   return (
     <div style={{
       display: 'flex',
@@ -102,16 +108,74 @@ function App() {
           gameState={gameState}
           onGameOver={handleGameOver}
           flapTrigger={flapTrigger}
+          speedLevel={speedLevel}
         />
       </div>
 
-      {/* Camera - Sabit pozisyon, sağ alt köşe */}
+      {/* Speed Level Selection Menu - MENU state'inde göster */}
+      {gameState === GameState.MENU && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: 'rgba(0, 0, 0, 0.7)',
+          zIndex: 999,
+        }}>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '20px',
+            padding: '40px',
+            backgroundColor: '#2a2a3e',
+            borderRadius: '15px',
+            border: '3px solid #00ff00',
+          }}>
+            <h1 style={{ color: 'white', textAlign: 'center', margin: '0 0 20px 0' }}>
+              Select Difficulty
+            </h1>
+            {[SpeedLevel.EASY, SpeedLevel.NORMAL, SpeedLevel.HARD].map((level) => (
+              <button
+                key={level}
+                onClick={() => handleSpeedSelection(level)}
+                style={{
+                  padding: '15px 40px',
+                  fontSize: '18px',
+                  fontWeight: 'bold',
+                  backgroundColor: speedLevel === level ? '#00ff00' : '#444',
+                  color: speedLevel === level ? '#000' : '#fff',
+                  border: '2px solid #00ff00',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#00ff00';
+                  e.currentTarget.style.color = '#000';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = speedLevel === level ? '#00ff00' : '#444';
+                  e.currentTarget.style.color = speedLevel === level ? '#000' : '#fff';
+                }}
+              >
+                {level}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Camera - Sabit pozisyon, sol üst köşe */}
       <div style={{
         position: 'fixed',
-        bottom: 15,
-        right: 15,
-        width: 320,
-        height: 240,
+        top: 15,
+        left: 15,
+        width: 160,
+        height: 120,
         borderRadius: 12,
         overflow: 'hidden',
         boxShadow: '0 4px 15px rgba(0,0,0,0.5)',

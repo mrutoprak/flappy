@@ -13,8 +13,8 @@ const CONNECTIONS = [
   [12, 14], [14, 16]
 ];
 
-const CAMERA_WIDTH = 320;
-const CAMERA_HEIGHT = 240;
+const CAMERA_WIDTH = 160;
+const CAMERA_HEIGHT = 120;
 
 export const Camera: React.FC<CameraProps> = ({ videoRef, poseResult, gameState }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);

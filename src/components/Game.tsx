@@ -4,10 +4,10 @@ import {
   GAME_WIDTH,
   PIPE_GAP,
   PIPE_WIDTH,
-  PIPE_SPAWN_INTERVAL,
   GROUND_HEIGHT,
-  PIPE_SPEED,
   GameState,
+  SpeedLevel,
+  SPEED_CONFIGS,
 } from '../game/constants';
 import { Bird } from '../game/Bird';
 import { Pipe } from '../game/Pipe';
@@ -16,9 +16,11 @@ interface GameProps {
   gameState: GameState;
   onGameOver: () => void;
   flapTrigger: number;
+  speedLevel: SpeedLevel;
 }
 
-export const Game: React.FC<GameProps> = ({ gameState, onGameOver, flapTrigger }) => {
+export const Game: React.FC<GameProps> = ({ gameState, onGameOver, flapTrigger, speedLevel }) => {
+  const speedConfig = SPEED_CONFIGS[speedLevel];
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const birdRef = useRef<Bird>(new Bird());
   const pipesRef = useRef<Pipe[]>([]);
@@ -73,18 +75,18 @@ export const Game: React.FC<GameProps> = ({ gameState, onGameOver, flapTrigger }
     if (maxY <= minY) return; // Spawn etmek için yeterli yer yok
     
     const gapY = minY + Math.random() * (maxY - minY);
-    pipesRef.current.push(new Pipe(gapY));
-  }, []);
+    pipesRef.current.push(new Pipe(gapY, speedConfig.pipeSpeed));
+  }, [speedConfig.pipeSpeed]);
 
   const resetGame = useCallback(() => {
     const { width, height } = gameSizeRef.current;
-    birdRef.current = new Bird(width / 3, height / 2 - 50);
+    birdRef.current = new Bird(width / 3, height / 2 - 50, speedConfig.gravity);
     pipesRef.current = [];
     scoreRef.current = 0;
     lastPipeTimeRef.current = Date.now();
     groundScrollRef.current = 0;
     frameCountRef.current = 0;
-  }, []);
+  }, [speedConfig.gravity]);
 
   const checkCollision = useCallback((): boolean => {
     const { height } = gameSizeRef.current;
@@ -180,7 +182,7 @@ export const Game: React.FC<GameProps> = ({ gameState, onGameOver, flapTrigger }
     birdRef.current.update();
 
     const now = Date.now();
-    if (now - lastPipeTimeRef.current > PIPE_SPAWN_INTERVAL) {
+    if (now - lastPipeTimeRef.current > speedConfig.pipeSpawnInterval) {
       spawnPipe();
       lastPipeTimeRef.current = now;
     }
@@ -194,10 +196,10 @@ export const Game: React.FC<GameProps> = ({ gameState, onGameOver, flapTrigger }
     });
 
     pipesRef.current = pipesRef.current.filter((p) => p.x > -PIPE_WIDTH * 2);
-    groundScrollRef.current = (groundScrollRef.current + PIPE_SPEED) % 24;
+    groundScrollRef.current = (groundScrollRef.current + speedConfig.pipeSpeed) % 24;
 
     if (checkCollision()) onGameOver();
-  }, [gameState, spawnPipe, checkCollision, onGameOver]);
+  }, [gameState, spawnPipe, checkCollision, onGameOver, speedConfig.pipeSpawnInterval, speedConfig.pipeSpeed]);
 
   useEffect(() => {
     if (gameState === GameState.PLAYING) resetGame();

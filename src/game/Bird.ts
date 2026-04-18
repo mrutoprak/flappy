@@ -7,14 +7,16 @@ export class Bird {
   velocity: number;
   frameIndex: number;
   animationTimer: number;
+  gravity: number;
 
-  constructor(x?: number, y?: number) {
+  constructor(x?: number, y?: number, gravity: number = GRAVITY) {
     // Her zaman parametre verilmeli, default olarak 100, 100 kullan
     this.x = x || 100;
     this.y = y || 100;
     this.velocity = 0;
     this.frameIndex = 0;
     this.animationTimer = 0;
+    this.gravity = gravity;
   }
 
   flap(): void {
@@ -22,7 +24,7 @@ export class Bird {
   }
 
   update(): void {
-    this.velocity += GRAVITY;
+    this.velocity += this.gravity;
     this.y += this.velocity;
     this.animationTimer += 1;
     if (this.animationTimer >= 5) {

@@ -57,3 +57,30 @@ export const GameState = {
 } as const;
 
 export type GameState = (typeof GameState)[keyof typeof GameState];
+
+export const SpeedLevel = {
+  EASY: 'EASY',
+  NORMAL: 'NORMAL',
+  HARD: 'HARD',
+} as const;
+
+export type SpeedLevel = (typeof SpeedLevel)[keyof typeof SpeedLevel];
+
+// Speed level configs
+export const SPEED_CONFIGS = {
+  EASY: {
+    gravity: 0.08,
+    pipeSpeed: 1.5,
+    pipeSpawnInterval: 7000,
+  },
+  NORMAL: {
+    gravity: 0.1,
+    pipeSpeed: 2,
+    pipeSpawnInterval: 6000,
+  },
+  HARD: {
+    gravity: 0.12,
+    pipeSpeed: 2.5,
+    pipeSpawnInterval: 5000,
+  },
+} as const;

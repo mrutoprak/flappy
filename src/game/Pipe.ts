@@ -5,15 +5,17 @@ export class Pipe {
   x: number;
   gapY: number;
   passed: boolean;
+  pipeSpeed: number;
 
-  constructor(gapY: number) {
+  constructor(gapY: number, pipeSpeed: number = PIPE_SPEED) {
     this.x = GAME_WIDTH + 50;
     this.gapY = gapY;
     this.passed = false;
+    this.pipeSpeed = pipeSpeed;
   }
 
   update(): void {
-    this.x -= PIPE_SPEED;
+    this.x -= this.pipeSpeed;
   }
 
   checkPassed(birdX: number): boolean {
