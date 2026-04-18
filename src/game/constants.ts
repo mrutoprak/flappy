@@ -50,6 +50,17 @@ export const PIPE_SPAWN_INTERVAL = 6000; // Arttırıldı: 4000 → 6000 (blokla
 export const GROUND_HEIGHT = 112;
 export const RAISE_THRESHOLD = -0.12;
 
+export const ExerciseMode = {
+  PUSHUP: 'PUSHUP',
+  PLANK: 'PLANK',
+} as const;
+
+export type ExerciseMode = (typeof ExerciseMode)[keyof typeof ExerciseMode];
+
+// Plank detection constants
+export const PLANK_ANGLE_TOLERANCE = 3; // degrees - Strict mode (0-3°)
+export const PLANK_WARNING_INTERVAL = 500; // ms - Don't spam warnings
+
 export const GameState = {
   MENU: 'MENU',
   PLAYING: 'PLAYING',

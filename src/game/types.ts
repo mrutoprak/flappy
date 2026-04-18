@@ -34,3 +34,10 @@ export interface PoseResult {
     visibility?: number;
   }[];
 }
+
+export interface PlankMetrics {
+  isStraight: boolean;
+  angle: number;
+  confidence: number;
+  lastWarningTime: number;
+}
