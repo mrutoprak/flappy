@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { usePoseDetection } from './hooks/usePoseDetection';
 import { useScreenOrientation } from './hooks/useScreenOrientation';
 import { Camera } from './components/Camera';
@@ -8,6 +8,31 @@ function App() {
   const [exerciseMode, setExerciseMode] = useState<ExerciseMode | null>(null);
   const { videoRef, error, poseResult } = usePoseDetection();
   const screenOrientation = useScreenOrientation();
+  const [target, setTarget] = useState<number | null>(null);
+  const [returnUrl, setReturnUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const targetParam = params.get('target');
+    const returnUrlParam = params.get('returnUrl');
+
+    if (targetParam) {
+      const targetNum = parseInt(targetParam, 10);
+      if (!isNaN(targetNum) && targetNum > 0) {
+        setTarget(targetNum);
+        setReturnUrl(returnUrlParam);
+        setExerciseMode(ExerciseMode.PUSHUP);
+      }
+    }
+  }, []);
+
+  const handleComplete = (count: number) => {
+    if (returnUrl && target && count >= target) {
+      const separator = returnUrl.includes('?') ? '&' : '?';
+      const redirectUrl = `${returnUrl}${separator}score=${count}`;
+      window.location.href = redirectUrl;
+    }
+  };
 
   if (error) {
     return (
@@ -28,8 +53,8 @@ function App() {
     );
   }
 
-  // Mode selection screen
-  if (exerciseMode === null) {
+  // Mode selection screen - only show if no target in URL
+  if (exerciseMode === null && !target) {
     return (
       <div style={{
         display: 'flex',
@@ -113,6 +138,10 @@ function App() {
     );
   }
 
+  if (!exerciseMode) {
+    return null;
+  }
+
   return (
     <div style={{
       width: '100%',
@@ -136,6 +165,9 @@ function App() {
           exerciseMode={exerciseMode}
           screenOrientation={screenOrientation}
           onModeChange={() => setExerciseMode(null)}
+          target={target}
+          returnUrl={returnUrl}
+          onComplete={handleComplete}
         />
       </div>
     </div>

@@ -10,6 +10,9 @@ interface CameraProps {
   exerciseMode: ExerciseMode;
   screenOrientation: ScreenOrientation;
   onModeChange: () => void;
+  target?: number | null;
+  returnUrl?: string | null;
+  onComplete?: (count: number) => void;
 }
 
 const CONNECTIONS = [
@@ -45,6 +48,9 @@ export const Camera: React.FC<CameraProps> = ({
   exerciseMode,
   screenOrientation,
   onModeChange,
+  target,
+  returnUrl,
+  onComplete,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { calculateAngle } = usePlankDetection();
@@ -54,6 +60,43 @@ export const Camera: React.FC<CameraProps> = ({
     confidence: 0,
     lastWarningTime: 0,
   });
+  const [pushupCount, setPushupCount] = useState(0);
+  const wasDownRef = useRef(false);
+  const targetRef = useRef(target ?? null);
+  const returnUrlRef = useRef(returnUrl ?? null);
+  const onCompleteRef = useRef(onComplete ?? null);
+
+  useEffect(() => {
+    targetRef.current = target ?? null;
+  }, [target]);
+
+  useEffect(() => {
+    returnUrlRef.current = returnUrl ?? null;
+  }, [returnUrl]);
+
+  useEffect(() => {
+    onCompleteRef.current = onComplete ?? null;
+  }, [onComplete]);
+
+  useEffect(() => {
+    if (exerciseMode !== ExerciseMode.PUSHUP || !target) return;
+
+    const isDown = !poseResult.elbowRaised;
+    
+    if (wasDownRef.current && !isDown && poseResult.shouldFlap) {
+      const newCount = pushupCount + 1;
+      setPushupCount(newCount);
+      createBeep();
+      
+      if (newCount >= target && returnUrl) {
+        setTimeout(() => {
+          onCompleteRef.current?.(newCount);
+        }, 500);
+      }
+    }
+    
+    wasDownRef.current = isDown;
+  }, [poseResult.shouldFlap, poseResult.elbowRaised, exerciseMode, target, returnUrl, pushupCount]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -274,24 +317,50 @@ export const Camera: React.FC<CameraProps> = ({
         </div>
       )}
 
-      {/* Push-up Status */}
       {exerciseMode === ExerciseMode.PUSHUP && (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 30,
-            left: 0,
-            right: 0,
-            textAlign: 'center',
-            color: poseResult.elbowRaised ? '#00ff00' : '#aaa',
-            fontSize: 16,
-            fontWeight: 'bold',
-            textShadow: '1px 1px 2px black',
-            zIndex: 10,
-          }}
-        >
-          {poseResult.elbowRaised ? '💪 ELBOWS UP - PUSH!' : 'Lower elbows for push-up'}
-        </div>
+        <>
+          {target && (
+            <div
+              style={{
+                position: 'absolute',
+                top: 70,
+                left: 15,
+                backgroundColor: pushupCount >= target ? '#00ff00' : 'rgba(0, 0, 0, 0.7)',
+                color: pushupCount >= target ? '#000' : '#fff',
+                padding: '12px 20px',
+                borderRadius: '8px',
+                fontWeight: 'bold',
+                fontSize: '18px',
+                zIndex: 10,
+                border: `2px solid ${pushupCount >= target ? '#00ff00' : '#fff'}`,
+              }}
+            >
+              <div>Hedef: {target}</div>
+              <div style={{ fontSize: '24px', color: pushupCount >= target ? '#000' : '#00ff00' }}>
+                ✅ {pushupCount} / {target}
+              </div>
+              {pushupCount >= target && (
+                <div style={{ fontSize: '14px', marginTop: '4px' }}>Tamamlandı!</div>
+              )}
+            </div>
+          )}
+          <div
+            style={{
+              position: 'absolute',
+              bottom: 30,
+              left: 0,
+              right: 0,
+              textAlign: 'center',
+              color: poseResult.elbowRaised ? '#00ff00' : '#aaa',
+              fontSize: 16,
+              fontWeight: 'bold',
+              textShadow: '1px 1px 2px black',
+              zIndex: 10,
+            }}
+          >
+            {poseResult.elbowRaised ? '💪 ELBOWS UP - PUSH!' : 'Lower elbows for push-up'}
+          </div>
+        </>
       )}
 
       {/* Landscape Warning Overlay - Plank Mode */}
